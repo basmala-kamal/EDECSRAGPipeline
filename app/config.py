@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     # Gemini API
     gemini_api_key: str = ""
     gemini_embedding_model: str = "models/embedding-001"
-    gemini_generation_model: str = "gemini-pro"
+    gemini_generation_model: str = "gemini-2.5-flash"
 
     # Chunking parameters
     chunk_size: int = 600
