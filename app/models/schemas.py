@@ -30,3 +30,16 @@ class QueryResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     message: str
+
+
+# Bulk upload response model
+class BulkUploadResult(BaseModel):
+    document_id: Optional[str]
+    filename: str
+    chunks_created: Optional[int]
+    message: str
+    error: Optional[str] = None
+
+
+class BulkUploadResponse(BaseModel):
+    results: List[BulkUploadResult]

@@ -1,9 +1,12 @@
+from typing import List
+from app.models.schemas import BulkUploadResponse, BulkUploadResult
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import shutil
 from pathlib import Path
 from uuid import uuid4
 import os
+
 
 from app.config import get_settings, Settings
 from app.models.schemas import (
@@ -25,6 +28,58 @@ app = FastAPI(
 # Create temp directory for uploads
 UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+def get_document_service(settings: Settings = Depends(get_settings)) -> DocumentService:
+    return DocumentService(settings)
+
+# Bulk upload endpoint (moved below app initialization)
+@app.post("/documents/bulk_upload", response_model=BulkUploadResponse)
+async def bulk_upload_documents(
+    files: List[UploadFile] = File(...),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    allowed_extensions = {'.pdf', '.txt'}
+    results = []
+    for file in files:
+        file_extension = Path(file.filename).suffix.lower()
+        if file_extension not in allowed_extensions:
+            results.append(BulkUploadResult(
+                document_id=None,
+                filename=file.filename,
+                chunks_created=None,
+                message="Failed",
+                error=f"Unsupported file format. Allowed: {allowed_extensions}"
+            ))
+            continue
+
+        temp_filename = f"{uuid4()}{file_extension}"
+        temp_file_path = UPLOAD_DIR / temp_filename
+        try:
+            with open(temp_file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            document_id, num_chunks = document_service.process_document(
+                file_path=str(temp_file_path),
+                filename=file.filename
+            )
+            results.append(BulkUploadResult(
+                document_id=document_id,
+                filename=file.filename,
+                chunks_created=num_chunks,
+                message="Document uploaded and processed successfully",
+                error=None
+            ))
+        except Exception as e:
+            results.append(BulkUploadResult(
+                document_id=None,
+                filename=file.filename,
+                chunks_created=None,
+                message="Failed",
+                error=str(e)
+            ))
+        finally:
+            if temp_file_path.exists():
+                temp_file_path.unlink()
+    return BulkUploadResponse(results=results)
 
 
 def get_document_service(settings: Settings = Depends(get_settings)) -> DocumentService:
