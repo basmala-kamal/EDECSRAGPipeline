@@ -12,8 +12,10 @@ class LLMService:
 
     def generate_answer(self, question: str, context_chunks: List[str]) -> str:
         # Construct context from chunks
-        context = "\n\n".join([f"[Chunk {i+1}]\n{chunk}" for i, chunk in enumerate(context_chunks)])
-
+        context = "\n\n".join([
+        f"[{chunk['headline']} - {chunk['confidence'].upper()}]\n{chunk['text']}"
+        for chunk in context_chunks
+        ])
         # Create controlled prompt
         prompt = f"""
         

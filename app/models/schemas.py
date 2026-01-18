@@ -19,6 +19,9 @@ class SourceChunk(BaseModel):
     chunk_id: str
     similarity_score: float
     text: str
+    headline: str
+    chunk_type: str
+    confidence: str
 
 
 class QueryResponse(BaseModel):
