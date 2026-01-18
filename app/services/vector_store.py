@@ -59,12 +59,10 @@ class VectorStore:
         document_id: Optional[str] = None
     ) -> Tuple[List[str], List[str], List[float]]:
        
-        # Prepare query filter
-        where_filter = None
-        if document_id:
-            where_filter = {"document_id": document_id}
+        # Prepare query filter: if document_id is provided, filter; else, search all
+        where_filter = {"document_id": document_id} if document_id else None
 
-        # Query ChromaDB
+        # Query ChromaDB (global if where_filter is None)
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
